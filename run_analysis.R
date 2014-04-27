@@ -6,23 +6,56 @@ unzip(FUCI.zip)
 
 #read in test data
 test <- read.table("../gettingdatacoursera/UCI HAR Dataset/test/X_test.txt", header = FALSE)
-
-#review information on test
 str(test)
-
 testLabels <- read.table("../gettingdatacoursera/UCI HAR Dataset/test/y_test.txt", header = FALSE)
 str(testLabels)
 
-#repeat for training data
+#subject data - add labels
+testSubjects <- read.table("../gettingdatacoursera/UCI HAR Dataset/test/subject_test.txt", header = FALSE)
+colnames(testSubjects)<- c("Subject")
 
+trainSubjects <- read.table("../gettingdatacoursera/UCI HAR Dataset/train/subject_train.txt", header = FALSE)
+colnames(trainSubjects)<- c("Subject")
+
+#repeat for training data
 train <- read.table("../gettingdatacoursera/UCI HAR Dataset/train/X_train.txt", header = FALSE)
 str(train)
-
 trainLabels <- read.table("../gettingdatacoursera/UCI HAR Dataset/train/y_train.txt", header = FALSE)
 str(trainLabels)
 
 
-#load activity labels
+#apply column labels to train and test
+colnames(test) <- features$V2
+colnames(train) <- features$V2
 
+#winnow data
+trainPart <- train[, grepl("([Mm]ean|[Ss]td)",features$V2)]
+testPart <- test[, grepl("([Mm]ean|[Ss]td)",features$V2)]
+
+#merge training Labels with Activities
+trainLabels <- merge(trainLabels, activityLabels, by="V1")
+testLabels <- merge(testLabels, activityLabels, by="V1")
+
+
+#load activity labels and features
 activityLabels <- read.table("../gettingdatacoursera/UCI HAR Dataset/activity_labels.txt", header = FALSE)
+features <- read.table("../gettingdatacoursera/UCI HAR Dataset/features.txt", header = FALSE)
 
+
+# review mean and std feature values
+features$V2[grep("([Mm]ean|[Ss]td)", features$V2)]
+
+# bind observation label and subject to each row for test and train
+
+trainFull <- cbind(trainLabels[2], trainSubjects, trainPart)
+testFull <- cbind(testLabels[2], testSubjects, testPart)
+
+#Combine rows
+dataFull <- rbind(trainFull, testFull)
+
+#tidy data column name
+colnames(dataFull)[1] <- c("Activity")
+
+#create melted data set from full data set
+dataMelt <- melt(dataFull, id=(c("Activity", "Subject")))
+dcast(dataMelt, Activity + Subject ~ variable, mean)
