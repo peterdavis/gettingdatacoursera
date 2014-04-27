@@ -56,6 +56,15 @@ dataFull <- rbind(trainFull, testFull)
 #tidy data column name
 colnames(dataFull)[1] <- c("Activity")
 
+#convert Subject to a factor
+dataFull$Subject <- factor(dataFull$Subject)
+
 #create melted data set from full data set
+#todo fix factors - something is causing them to fold to 40 obs
+
 dataMelt <- melt(dataFull, id=(c("Activity", "Subject")))
-dcast(dataMelt, Activity + Subject ~ variable, mean)
+dataMeans <- dcast(dataMelt, Activity + Subject ~ variable, mean)
+
+# output data set
+write.table(dataMeans, file="tidyDataMeans.txt", sep="\t")
+
